@@ -36,7 +36,7 @@ def get_neighbours(local):
 
 
 # Read neighbors from IP Table and create faces for them
-def get_neighbours2():
+def get_neighbours_table():
 	result = subprocess.run(['ip', 'neighbor'], stdout=subprocess.PIPE)
 	old_neighbors = neighbors
 	neighbors.clear()
@@ -51,6 +51,26 @@ def get_neighbours2():
 	for neighbor in neighbors:
 		print("Adding neighbor: " + neighbor)
 		add_face(neighbor)
+
+
+# Read neighbors from IP Table using the route command and create faces for them via the specified address
+def get_neighbours_route():
+	result = subprocess.run(['ip', 'route'], stdout=subprocess.PIPE)
+	old_neighbors = neighbors
+	neighbors.clear()
+	full = result.stdout.decode('utf-8')
+	for line in full.splitlines():
+		if "via" in line and line.startswith("192.168.1."):
+			print(line)
+			address = line.split(" ")[2].splitlines()[0]
+			target = line.split(" ")[0].splitlines()[0]
+			node = target.split("168.1.")[1]
+			neighbors.append(target)
+			print("Adding neighbor: " + node + " through: " + address)
+			add_other_face(node, address)
+	for old in old_neighbors:
+		if old not in neighbors:
+			delete_face(old)
 
 
 # Send unknown hosts to first neighbor
@@ -70,7 +90,7 @@ def add_face(address):
 	return
 
 
-# Create face of node on different address
+# Create face of node via a different address
 def add_other_face(node, address):
 	bash_command = "FACEID" + node + "=`~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/'`"
 	subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE, shell=True)
@@ -92,5 +112,5 @@ local_address = get_local_address()
 starttime = time.time()
 while True:
 	print("Getting neighbors....")
-	get_neighbours2()
-	time.sleep(60.0 - ((time.time() - starttime) % 60.0))
+	get_neighbours_route()
+	time.sleep(30.0 - ((time.time() - starttime) % 30.0))
