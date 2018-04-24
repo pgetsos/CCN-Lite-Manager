@@ -30,9 +30,11 @@ def get_local_address():
 # Read neighbors from babel - not in use
 def get_neighbours(local):
 	for line in sh.tail("-f", "/home/pi/babeld.log", _iter=True):
-		if "192.168.1." in line and line.startswith("192") and local not in line:
-			address = line.split("/")[0].splitlines()[0]
-			add_face(address)
+		if line.startswith("192.168.1.") and "nexthop " in line and local not in line:
+			target = line.split("/")[0].splitlines()[0]
+			node = target.split("168.1.")[1]
+			address = line.split("nexthop ")[1].split(" ")[0]
+			add_other_face(node, address)
 
 
 # Read neighbors from IP Table and create faces for them
@@ -83,7 +85,7 @@ def add_rest():
 # Create face based on address
 def add_face(address):
 	node = address.split("168.1.")[1]
-	bash_command = "FACEID" + node + "=`~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/'`"
+	bash_command = "FACEID" + node + "=$(~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE, shell=True)
 	bash_command = "~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE, shell=True)
@@ -92,7 +94,7 @@ def add_face(address):
 
 # Create face of node via a different address
 def add_other_face(node, address):
-	bash_command = "FACEID" + node + "=`~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/'`"
+	bash_command = "FACEID" + node + "=$(~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE, shell=True)
 	bash_command = "~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE, shell=True)
