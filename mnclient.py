@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-timport zmq
+import zmq
 import msgpack
 from zmq.eventloop.zmqstream import ZMQStream
 from zmq.eventloop.ioloop import IOLoop, DelayedCallback

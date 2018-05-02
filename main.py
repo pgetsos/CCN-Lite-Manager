@@ -126,15 +126,15 @@ while True:
 	print("Getting neighbors....")
 	get_neighbours_route()
 
-	# context = zmq.Context()
-	# socket = context.socket(zmq.REQ)
-	# socket.setsockopt(zmq.LINGER, 0)
-	# socket.connect("tcp://127.0.0.1:5555")
-	# res = mn_request(socket, b'echo', [' ', CLIENT_PROTO, MSG_DUMP], 5.0)
-	# if res:
-	# 	print("Reply:", repr(res))
-	# else:
-	# 	print('Timeout!')
-	# socket.close()
+	context = zmq.Context()
+	socket = context.socket(zmq.REQ)
+	socket.setsockopt(zmq.LINGER, 0)
+	socket.connect("tcp://127.0.0.1:5555")
+	res = mn_request(socket, b'echo', ['', CLIENT_PROTO, 'echo', "random wid", MSG_DUMP], 5.0)
+	if res:
+		print("Reply:", repr(res))
+	else:
+		print('Timeout!')
+	socket.close()
 
 	time.sleep(30.0 - ((time.time() - starttime) % 30.0))

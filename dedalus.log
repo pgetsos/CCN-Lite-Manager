@@ -1,0 +1,23 @@
+/home/pi/Dedalus/dedalus/mnbroker_runner.py:4: VisibleDeprecationWarning: zmq.eventloop.minitornado is deprecated in pyzmq 14.0 and will be removed.
+    Install tornado itself to use zmq with the tornado IOLoop.
+    
+  from zmq.eventloop.ioloop import IOLoop
+Logger::Network logger endpoint is already in use!
+-Dedalus v0.1.4-
+Services to run: '1' broker, '1' worker(s)
+main endpoint [tcp://192.168.1.1:5555], optional endpoint [None]
+Process Process-1:
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/multiprocessing/process.py", line 258, in _bootstrap
+    self.run()
+  File "/usr/lib/python2.7/multiprocessing/process.py", line 114, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/pi/Dedalus/dedalus/mnbroker_runner.py", line 37, in run
+    broker = DedalusRunner(context, address, optional_address)
+  File "/home/pi/Dedalus/dedalus/mnbroker.py", line 94, in __init__
+    socket.bind(main_ep)
+  File "zmq/backend/cython/socket.pyx", line 495, in zmq.backend.cython.socket.Socket.bind
+  File "zmq/backend/cython/checkrc.pxd", line 25, in zmq.backend.cython.checkrc._check_rc
+    raise ZMQError(errno)
+ZMQError: Address already in use
+mnworker > Worker initialized and can be found at 'tcp://192.168.1.1:5555'
