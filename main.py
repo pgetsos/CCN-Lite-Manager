@@ -8,10 +8,11 @@ import time
 import zmq
 import msgpack
 from zmq.eventloop.ioloop import IOLoop
-from mnclient import MNClient, mn_request
-from config import MSG_DUMP, CLIENT_PROTO
+from client_runner import ClientRunner
+from config import MSG_DUMP, CLIENT_PROTO, SERVICE_ECHO
+from logging import getLogger
 
-
+_LOG = getLogger(__name__)
 neighbors = []
 
 
@@ -124,17 +125,22 @@ local_address = get_local_address()
 starttime = time.time()
 while True:
 	print("Getting neighbors....")
-	get_neighbours_route()
+	#get_neighbours_route()
 
+	addressD = "tcp://192.168.1.1:5555"
 	context = zmq.Context()
-	socket = context.socket(zmq.REQ)
-	socket.setsockopt(zmq.LINGER, 0)
-	socket.connect("tcp://127.0.0.1:5555")
-	res = mn_request(socket, b'echo', ['', CLIENT_PROTO, 'echo', "random wid", MSG_DUMP], 5.0)
-	if res:
-		print("Reply:", repr(res))
-	else:
-		print('Timeout!')
-	socket.close()
+	print("run")
+	client = ClientRunner(context, addressD, SERVICE_ECHO)
+	print("run2")
+	try:
+		IOLoop.instance().start()
+		print("run3")
+		client.shutdown()
+	except KeyboardInterrupt:
+		_LOG.info("Interrupt received, stopping!")
+	finally:
+		# clean up
+		client.shutdown()
+		context.term()
 
-	time.sleep(30.0 - ((time.time() - starttime) % 30.0))
+	#time.sleep(30.0 - ((time.time() - starttime) % 30.0))
