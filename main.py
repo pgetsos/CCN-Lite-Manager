@@ -141,16 +141,17 @@ def delete_face(address):
 if __name__ == "__main__":
 	local_address = get_local_address()
 
-	while True:
-		ccn_choice = input("Choose action: \n1. Create content\n2. Open CCN server\n3. Search for content (requires an open server!)")
-		if ccn_choice == '1':
-			create_content(local_address.split("168.1.")[1])
-		elif ccn_choice == '2':
-			break
-		elif ccn_choice == '3':
-			search_content(local_address)
-		else:
-			print("\n!!! This choice doesn't exist, please try again !!!\n")
+	if len(sys.argv) > 1:
+		while True:
+			ccn_choice = input("Choose action: \n1. Create content\n2. Open CCN server\n3. Search for content (requires an open server!)")
+			if ccn_choice == '1':
+				create_content(local_address.split("168.1.")[1])
+			elif ccn_choice == '2':
+				break
+			elif ccn_choice == '3':
+				search_content(local_address)
+			else:
+				print("\n!!! This choice doesn't exist, please try again !!!\n")
 
 	openrelay()
 	starttime = time.time()
@@ -163,15 +164,19 @@ if __name__ == "__main__":
 		context = zmq.Context()
 		client = ClientRunner(context, addressD, SERVICE_ECHO)
 		print("Running IOLoop")
+		io_loop = IOLoop.instance()
 		try:
-			IOLoop.instance().start()
+			io_loop.start()
 			print("Finished...")
 			client.shutdown()
 		except KeyboardInterrupt:
 			_LOG.info("Interrupt received, stopping!")
+		except Exception as e:
+			Log.error("Hmm...", e)
 		finally:
 			# clean up
 			client.shutdown()
 			context.term()
+			io_loop.stop()
 
 		time.sleep(30.0 - ((time.time() - starttime) % 30.0))
