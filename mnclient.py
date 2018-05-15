@@ -68,7 +68,7 @@ class MNClient(MN_object):
         self.service = service
         self.endpoint = endpoint
         self.can_send = True
-        self._proto_prefix = [CLIENT_PROTO, service]
+        self._proto_prefix = ['', CLIENT_PROTO, service]
         self._tmo = None
         self.timed_out = False
         self._create_stream()
@@ -81,7 +81,8 @@ class MNClient(MN_object):
         ioloop = IOLoop.instance()
         self.stream = ZMQStream(socket, ioloop)
         self.stream.on_recv(self._on_message)
-        socket.connect(self.endpoint)
+        self.stream.socket.setsockopt(zmq.LINGER, 0)
+        self.stream.connect(self.endpoint)
 
     def shutdown(self):
         """Method to deactivate the client connection completely.
@@ -94,7 +95,6 @@ class MNClient(MN_object):
         """
         if not self.stream:
             return
-        self.stream.socket.setsockopt(zmq.LINGER, 0)
         self.stream.socket.close()
         self.stream.close()
         self.stream = None
@@ -115,8 +115,9 @@ class MNClient(MN_object):
         if isinstance(msg, bytes):
             msg = [msg]
         # prepare full message
-        to_send = self._proto_prefix[:]
-        to_send.extend(msg)
+        # to_send = self._proto_prefix[:]
+        # to_send.extend(msg)
+        to_send = msg
         if self.stream.closed():
             self._create_stream()
             # TODO check this
@@ -174,36 +175,36 @@ class MNClient(MN_object):
         pass
 
 
-def mn_request(socket, service, msg, timeout=None):
-    """Synchronous MN request.
-
-    This function sends a request to the given service and
-    waits for a reply.
-
-    If timeout is set and no reply received in the given time
-    the function will return `None`.
-
-    :param socket:    zmq REQ socket to use.
-    :type socket:     zmq.Socket
-    :param service:   service id to send the msg to.
-    :type service:    str
-    :param msg:       list of message parts to send.
-    :type msg:        list of str
-    :param timeout:   time to wait for answer in seconds.
-    :type timeout:    float
-
-    :rtype list of str:
-    """
-    if not timeout or timeout < 0.0:
-        timeout = None
-    if isinstance(msg, bytes):
-        msg = [msg]
-    to_send = [CLIENT_PROTO, service]
-    to_send.extend(msg)
-    socket.send_multipart(to_send)  # TODO check open stream. if closed reopen it
-    ret = None
-    rlist, _, _ = select([socket], [], [], timeout)
-    if rlist and rlist[0] == socket:
-        ret = socket.recv_multipart()
-        ret.pop(0)  # remove service from reply
-    return ret
+# def mn_request(socket, service, msg, timeout=None):
+#     """Synchronous MN request.
+#
+#     This function sends a request to the given service and
+#     waits for a reply.
+#
+#     If timeout is set and no reply received in the given time
+#     the function will return `None`.
+#
+#     :param socket:    zmq REQ socket to use.
+#     :type socket:     zmq.Socket
+#     :param service:   service id to send the msg to.
+#     :type service:    str
+#     :param msg:       list of message parts to send.
+#     :type msg:        list of str
+#     :param timeout:   time to wait for answer in seconds.
+#     :type timeout:    float
+#
+#     :rtype list of str:
+#     """
+#     if not timeout or timeout < 0.0:
+#         timeout = None
+#     if isinstance(msg, bytes):
+#         msg = [msg]
+#     to_send = [CLIENT_PROTO, service]
+#     to_send.extend(msg)
+#     socket.send_multipart(to_send)  # TODO check open stream. if closed reopen it
+#     ret = None
+#     rlist, _, _ = select([socket], [], [], timeout)
+#     if rlist and rlist[0] == socket:
+#         ret = socket.recv_multipart()
+#         ret.pop(0)  # remove service from reply
+#     return ret

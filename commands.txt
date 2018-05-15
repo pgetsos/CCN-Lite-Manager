@@ -1,0 +1,17 @@
+//Produce content
+/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 "/node1/test/mycontent" > /home/pi/ccn-lite/test/ndntlv/mycontent.ndntlv
+
+//Open relay
+/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay-a.sock
+
+//Open relay and add folder to cache
+/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay-a.sock -d /home/pi/ccn-lite/test/ndntlv
+
+//Add face
+FACEID=`/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any 127.0.0.1 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/'`
+
+//Add forwarding rule
+/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node1 $FACEID ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml
+
+//Search for content
+/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u 127.0.0.1/9998 "/node1/test/mycontent" | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2
