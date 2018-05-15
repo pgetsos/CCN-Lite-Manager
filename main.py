@@ -4,6 +4,7 @@ import subprocess
 import sh
 from faces import faces_array
 import time
+import sys
 
 import zmq
 import msgpack
