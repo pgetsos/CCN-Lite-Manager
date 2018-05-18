@@ -37,7 +37,23 @@ def search_content(local):
 
 # Open a relay for ccn-lite in the background
 def openrelay():
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay-a.sock -d /home/pi/ccn-lite/test/ndntlv > /home/pi/ccn.log 2>&1 &"
+	delete_sockets()
+	print("Opening relay...")
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay.sock -d /home/pi/ccn-lite/test/ndntlv > /home/pi/ccn.log 2>&1 &"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	add_face("192.168.1.2")
+	add_face("192.168.1.3")
+	add_face("192.168.1.4")
+	add_face("192.168.1.5")
+	return
+
+
+# Delete the old sockets
+def delete_sockets():
+	print("Deleting temporary sockets...")
+	bash_command = "rm /tmp/mgmt-relay*"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	bash_command = "rm /tmp/.ccn-light-ctrl-*"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
@@ -110,10 +126,11 @@ def add_rest():
 
 # Create face based on address
 def add_face(address):
+	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
-	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
@@ -121,7 +138,7 @@ def add_face(address):
 # Create face of node via a different address
 def add_other_face(node, address):
 	print("Adding neighbor: " + node)
-	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	print("Adding forwarding rule through: " + address)
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
@@ -132,10 +149,10 @@ def add_other_face(node, address):
 
 # Delete a face of a node -NOT address
 def delete_face(address):
+	print("Deleting face to: " + address)
 	node = address.split("168.1.")[1]
-	bash_command = "$CCNL_HOME/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock destroyface $FACEID" + node + " | $CCNL_HOME/build/bin/ccn-lite-ccnb2xml"
+	bash_command = "$CCNL_HOME/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock destroyface $FACEID" + node + " | $CCNL_HOME/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	print("Deleted face to: " + address)
 	return
 
 
