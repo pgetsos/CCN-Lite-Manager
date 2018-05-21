@@ -41,10 +41,6 @@ def openrelay():
 	print("Opening relay...")
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay.sock -d /home/pi/ccn-lite/test/ndntlv > /home/pi/ccn.log 2>&1 &"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	add_face("192.168.1.2")
-	add_face("192.168.1.3")
-	add_face("192.168.1.4")
-	add_face("192.168.1.5")
 	return
 
 
@@ -61,7 +57,7 @@ def delete_sockets():
 # Read the RPi's IP address from the configuration file
 def get_local_address():
 	local = "192.168.1.1"
-	for line in sh.tail("-f", "/etc/network/interfaces", _iter=True):
+	for line in sh.tail("-n", "20", "-f", "/etc/network/interfaces", _iter=True):
 		if "address 192.168.1." in line:
 			local = line.split("address ")[1].splitlines()[0]
 			break
@@ -129,8 +125,7 @@ def add_face(address):
 	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
 	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
-	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	bash_command = bash_command + " | /home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
@@ -139,9 +134,8 @@ def add_face(address):
 def add_other_face(node, address):
 	print("Adding neighbor: " + node)
 	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
-	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	print("Adding forwarding rule through: " + address)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	bash_command = bash_command + " | /home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	print("Added neighbor: " + node + " through: " + address)
 	return
@@ -178,23 +172,41 @@ if __name__ == "__main__":
 		print("Getting neighbors....")
 		get_neighbours_route()
 
-		addressD = "tcp://192.168.1.1:5555"
-		context = zmq.Context()
-		client = ClientRunner(context, addressD, SERVICE_ECHO)
-		print("Running IOLoop")
-		io_loop = IOLoop.instance()
-		try:
-			io_loop.start()
-			print("Finished...")
-			client.shutdown()
-		except KeyboardInterrupt:
-			_LOG.info("Interrupt received, stopping!")
-		except Exception as e:
-			Log.error("Hmm...", e)
-		finally:
-			# clean up
-			client.shutdown()
-			context.term()
-			io_loop.stop()
+		if len(sys.argv) > 1:
+			while True:
+				ccn_choice2 = input(
+					"Choose action: \n1. Hmm\n2. Open CCN server\n3. Search for content (requires an open server!)")
+				if ccn_choice2 == '1':
+					print("Hmm")
+					node = "1"
+					bash_command = " /home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " 6 ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/gamiesai.log 2>&1 &"
+					print(bash_command)
+					subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+					break
+				elif ccn_choice2 == '2':
+					break
+				elif ccn_choice2 == '3':
+					search_content(local_address)
+				else:
+					print("\n!!! This choice doesn't exist, please try again !!!\n")
+
+		# addressD = "tcp://192.168.1.1:5555"
+		# context = zmq.Context()
+		# client = ClientRunner(context, addressD, SERVICE_ECHO)
+		# print("Running IOLoop")
+		# io_loop = IOLoop.instance()
+		# try:
+		# 	io_loop.start()
+		# 	print("Finished...")
+		# 	client.shutdown()
+		# except KeyboardInterrupt:
+		# 	_LOG.info("Interrupt received, stopping!")
+		# except Exception as e:
+		# 	Log.error("Hmm...", e)
+		# finally:
+		# 	# clean up
+		# 	client.shutdown()
+		# 	context.term()
+		# 	io_loop.stop()
 
 		time.sleep(30.0 - ((time.time() - starttime) % 30.0))
