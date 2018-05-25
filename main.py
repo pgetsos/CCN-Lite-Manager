@@ -1,9 +1,10 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3.5 -u
 
 import subprocess
 import sh
 from faces import faces_array
 import time
+import sys
 
 import zmq
 import msgpack
@@ -16,9 +17,39 @@ _LOG = getLogger(__name__)
 neighbors = []
 
 
+# Create content for ccn-lite
+def create_content(node):
+	path = input("Local path (don't include initial '/'): ")
+	name = input("File name: ")
+	content = input("Content: ")
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 /node" + node + "/" + path + " > /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv << "+content
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
+# Create content for ccn-lite
+def search_content(local):
+	path = input("Lookup path: ")
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 "
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
 # Open a relay for ccn-lite in the background
 def openrelay():
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay-a.sock > /home/pi/ccn.log 2>&1 &"
+	delete_sockets()
+	print("Opening relay...")
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay.sock -d /home/pi/ccn-lite/test/ndntlv > /home/pi/ccn.log 2>&1 &"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
+# Delete the old sockets
+def delete_sockets():
+	print("Deleting temporary sockets...")
+	bash_command = "rm /tmp/mgmt-relay*"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	bash_command = "rm /tmp/.ccn-light-ctrl-*"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
@@ -26,7 +57,7 @@ def openrelay():
 # Read the RPi's IP address from the configuration file
 def get_local_address():
 	local = "192.168.1.1"
-	for line in sh.tail("-f", "/etc/network/interfaces", _iter=True):
+	for line in sh.tail("-n", "20", "-f", "/etc/network/interfaces", _iter=True):
 		if "address 192.168.1." in line:
 			local = line.split("address ")[1].splitlines()[0]
 			break
@@ -90,22 +121,42 @@ def add_rest():
 
 
 # Create face based on address
-def add_face(address):
+def add_face2(address):
+	delete_face(address)
+	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
-	bash_command = "FACEID" + node + "=$(~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	bash_command = "~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	command = "echo $FACEID" + node + " > /home/pi/lol.log 2>&1 &"
+	subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
+# Create face based on address
+def add_face(address):
+	#delete_face(address)
+	print("Adding face for: "+address)
+	node = address.split("168.1.")[1]
+	bash_command = "echo $(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	p = subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	value, err = p.communicate()
+	face_num = ord(value.split()[0])
+	print(face_num)
+	#bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + str(face_num) + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	#subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	#command = "echo " + str(face_num) + " > /home/pi/lol.log 2>&1 &"
+	#subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 	return
 
 
 # Create face of node via a different address
 def add_other_face(node, address):
 	print("Adding neighbor: " + node)
-	bash_command = "FACEID" + node + "=$(~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock newUDPface any " + address + " 9998 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID" + node + " | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
-	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	print("Adding forwarding rule through: " + address)
-	bash_command = "~/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | ~/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	bash_command = bash_command + " | /home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	print("Added neighbor: " + node + " through: " + address)
 	return
@@ -113,13 +164,14 @@ def add_other_face(node, address):
 
 # Delete a face of a node -NOT address
 def delete_face(address):
+	print("Deleting face to: " + address)
 	node = address.split("168.1.")[1]
-	bash_command = "$CCNL_HOME/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-a.sock destroyface $FACEID" + node + " | $CCNL_HOME/build/bin/ccn-lite-ccnb2xml"
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock destroyface $FACEID" + node + " | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	print("Deleted face to: " + address)
 	return
 
 
+<<<<<<< HEAD
 openrelay()
 local_address = get_local_address()
 starttime = time.time()
@@ -144,3 +196,79 @@ while True:
 		context.term()
 
 	#time.sleep(30.0 - ((time.time() - starttime) % 30.0))
+=======
+def run_auto():
+	local_address = get_local_address()
+	openrelay()
+	start_time = time.time()
+	while True:
+		add_face(local_address)
+		print("Getting neighbors....")
+		get_neighbours_route()
+		time.sleep(30.0 - ((time.time() - start_time) % 30.0))
+
+
+def run_without_args():
+	local_address = get_local_address()
+	openrelay()
+	start_time = time.time()
+	while True:
+		add_face(local_address)
+		print("Getting neighbors....")
+		get_neighbours_route()
+		time.sleep(10.0 - ((time.time() - start_time) % 10.0))
+
+
+def run_with_args():
+	local_address = get_local_address()
+	while True:
+		ccn_choice = input(
+			"Choose action: \n1. Create content\n2. Open CCN server\n3. Search for content (requires an open server!)\n4. Continue")
+		if ccn_choice == '1':
+			create_content(local_address.split("168.1.")[1])
+		elif ccn_choice == '2':
+			openrelay()
+		elif ccn_choice == '3':
+			search_content(local_address)
+		elif ccn_choice == '4':
+			break
+		else:
+			print("\n!!! This choice doesn't exist, please try again !!!\n")
+	local_address = get_local_address()
+	openrelay()
+	start_time = time.time()
+	while True:
+		add_face(local_address)
+		print("Getting neighbors....")
+		get_neighbours_route()
+		time.sleep(30.0 - ((time.time() - start_time) % 30.0))
+
+
+if __name__ == "__main__":
+	if len(sys.argv) > 1:
+		if sys.argv[1] == "auto":
+			run_auto()
+		else:
+			run_with_args()
+	else:
+		run_without_args()
+
+		# addressD = "tcp://192.168.1.1:5555"
+		# context = zmq.Context()
+		# client = ClientRunner(context, addressD, SERVICE_ECHO)
+		# print("Running IOLoop")
+		# io_loop = IOLoop.instance()
+		# try:
+		# 	io_loop.start()
+		# 	print("Finished...")
+		# 	client.shutdown()
+		# except KeyboardInterrupt:
+		# 	_LOG.info("Interrupt received, stopping!")
+		# except Exception as e:
+		# 	Log.error("Hmm...", e)
+		# finally:
+		# 	# clean up
+		# 	client.shutdown()
+		# 	context.term()
+		# 	io_loop.stop()
+>>>>>>> 84faa23f0353f8f1e2316d45ef18854d96359d9e

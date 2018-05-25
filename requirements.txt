@@ -1,7 +1,5 @@
-Python3.5
-sh (install from pip3)
-zmq (install from pip3)
-msgpack (install from pip3)
+zmq
+sh
 ccn-lite (install from repo)
 -ccn-lite requires:
 	openSSL
