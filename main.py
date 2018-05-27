@@ -1,9 +1,10 @@
-#!/usr/bin/python3.5 -u
+#!/usr/bin/python3.5
 
 import subprocess
 import sh
 from faces import faces_array
 import time
+from xml.dom import minidom
 import sys
 
 import zmq
@@ -139,15 +140,20 @@ def add_face(address):
 	#delete_face(address)
 	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
-	bash_command = "echo $(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
-	p = subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-	value, err = p.communicate()
-	face_num = ord(value.split()[0])
-	print(face_num)
-	#bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + str(face_num) + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
-	#subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
-	#command = "echo " + str(face_num) + " > /home/pi/lol.log 2>&1 &"
-	#subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1 &"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	time.sleep(3)
+	face_id = read_face()
+	print(node)
+	# value, err = p.communicate()
+	# face_num = ord(value.split()[0])
+	# print(face_num)
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	# command = "echo " + str(face_num) + " > /home/pi/lol.log 2>&1 &"
+	# subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 	return
 
 
@@ -171,32 +177,18 @@ def delete_face(address):
 	return
 
 
-<<<<<<< HEAD
-openrelay()
-local_address = get_local_address()
-starttime = time.time()
-while True:
-	print("Getting neighbors....")
-	#get_neighbours_route()
+def read_face():
+	with open('/home/pi/face_dump.log', encoding='utf-8', errors='ignore') as f:
+		for line in f:
+			if "FACEID" in line:
+				node = line.split("FACEID>")[1].split("<")[0]
+				for i in range(4): f.readline()
+				line = f.readline()
+				if "PEER" in line:
+					return node
 
-	addressD = "tcp://192.168.1.1:5555"
-	context = zmq.Context()
-	print("run")
-	client = ClientRunner(context, addressD, SERVICE_ECHO)
-	print("run2")
-	try:
-		IOLoop.instance().start()
-		print("run3")
-		client.shutdown()
-	except KeyboardInterrupt:
-		_LOG.info("Interrupt received, stopping!")
-	finally:
-		# clean up
-		client.shutdown()
-		context.term()
 
-	#time.sleep(30.0 - ((time.time() - starttime) % 30.0))
-=======
+
 def run_auto():
 	local_address = get_local_address()
 	openrelay()
@@ -216,7 +208,7 @@ def run_without_args():
 		add_face(local_address)
 		print("Getting neighbors....")
 		get_neighbours_route()
-		time.sleep(10.0 - ((time.time() - start_time) % 10.0))
+		time.sleep(30.0 - ((time.time() - start_time) % 30.0))
 
 
 def run_with_args():
@@ -271,4 +263,3 @@ if __name__ == "__main__":
 		# 	client.shutdown()
 		# 	context.term()
 		# 	io_loop.stop()
->>>>>>> 84faa23f0353f8f1e2316d45ef18854d96359d9e
