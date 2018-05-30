@@ -1,6 +1,7 @@
 #!/usr/bin/python3.5
 
 import subprocess
+import io
 
 
 # Create automatically content for ccn-lite
@@ -8,7 +9,11 @@ def create_content_auto(num):
 	path = "text/text"+str(num)
 	name = "text"+str(num)
 	content = "This is the content from text: "+str(num)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 /node" + str(1) + "/" + path + " > /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv << "+content
+
+	bash_command = "echo "+content+" > /home/pi/data/data"+str(num)+".txt "
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 -i /home/pi/data/data"+str(num)+".txt -o /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv /node" + str(1) + "/" + path
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 

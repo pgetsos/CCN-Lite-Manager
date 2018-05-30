@@ -57,15 +57,15 @@ def run_auto_22():
 		get_neighbours_route()
 		time.sleep(3)
 
-		search_content_auto(local_address,  6, "2.11-"+counter)
+		search_content_auto(local_address,  6, "2.11-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  7, "2.12-"+counter)
+		search_content_auto(local_address,  7, "2.12-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  8, "2.13-"+counter)
+		search_content_auto(local_address,  8, "2.13-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  9, "2.14-"+counter)
+		search_content_auto(local_address,  9, "2.14-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address, 10, "2.15-"+counter)
+		search_content_auto(local_address, 10, "2.15-"+str(counter))
 		time.sleep(1)
 		counter = counter + 1
 		if counter == 6:
