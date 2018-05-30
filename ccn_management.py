@@ -45,12 +45,12 @@ def add_face(address):
 	time.sleep(1)
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-	time.sleep(3)
+	time.sleep(1)
 	face_id = read_face()
 	if face_id is None:
 		return
 	delete_face(node)
-	time.sleep(2)
+	time.sleep(1)
 	faces_ids[node] = face_id
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)

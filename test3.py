@@ -21,11 +21,11 @@ def run_auto_32():
 	counter = 1
 	while True:
 		add_face("192.168.1.1")
-		time.sleep(3)
+		time.sleep(1)
 
 		search_content_auto(local_address, 11, "3.1-"+str(counter))
 
-		time.sleep(1)
+		#time.sleep(1)
 
 		counter = counter + 1
 		if counter == 101:
