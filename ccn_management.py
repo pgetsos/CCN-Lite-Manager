@@ -53,7 +53,7 @@ def add_face(address):
 	time.sleep(1)
 	faces_ids[node] = face_id
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /ndn " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	#bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /ndn " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
