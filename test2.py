@@ -12,7 +12,7 @@ def run_auto_21():
 	create_content_auto(8)
 	create_content_auto(9)
 	create_content_auto(10)
-	time.sleep(3)
+	time.sleep(2)
 	openrelay()
 
 
@@ -20,7 +20,7 @@ def run_auto_22():
 	local_address = get_local_address()
 
 	openrelay()
-	time.sleep(3)
+	time.sleep(2)
 
 	start_time = time.time()
 
@@ -30,16 +30,15 @@ def run_auto_22():
 		print("Getting neighbors....")
 		get_neighbours_route()
 
-		time.sleep(3)
+		time.sleep(1)
 
 		search_content_auto(local_address, 6, "2.1-"+str(counter))
-		time.sleep(1)
 		search_content_auto(local_address, 7, "2.2-"+str(counter))
 		search_content_auto(local_address, 8, "2.3-"+str(counter))
 		search_content_auto(local_address, 9, "2.4-"+str(counter))
 		search_content_auto(local_address, 10, "2.5-"+str(counter))
 
-		time.sleep(3)
+		time.sleep(2)
 
 		search_content_auto(local_address,  6, "2.6-"+str(counter))
 		search_content_auto(local_address,  7, "2.7-"+str(counter))
@@ -47,15 +46,15 @@ def run_auto_22():
 		search_content_auto(local_address,  9, "2.9-"+str(counter))
 		search_content_auto(local_address, 10, "2.10-"+str(counter))
 
-		time.sleep(3)
-
-		close_relay()
 		time.sleep(5)
 
+		close_relay()
+		time.sleep(2)
+
 		openrelay()
-		time.sleep(3)
+		time.sleep(1)
 		get_neighbours_route()
-		time.sleep(3)
+		time.sleep(1)
 
 		search_content_auto(local_address,  6, "2.11-"+str(counter))
 		time.sleep(1)
@@ -68,7 +67,7 @@ def run_auto_22():
 		search_content_auto(local_address, 10, "2.15-"+str(counter))
 		time.sleep(1)
 		counter = counter + 1
-		if counter == 6:
+		if counter == 4:
 			break
-		time.sleep(30.0 - ((time.time() - start_time) % 30.0))
+		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
 	print("FINISHED!")

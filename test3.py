@@ -28,6 +28,6 @@ def run_auto_32():
 		#time.sleep(1)
 
 		counter = counter + 1
-		if counter == 101:
+		if counter == 31:
 			break
 	print("FINISHED!")
