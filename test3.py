@@ -24,6 +24,7 @@ def run_auto_32():
 		time.sleep(3)
 
 		search_content_auto(local_address, 11, "3.1-"+str(counter))
+
 		time.sleep(1)
 
 		counter = counter + 1

@@ -37,7 +37,7 @@ def delete_sockets():
 
 # Create face based on address
 def add_face(address):
-	#delete_face(address)
+	# delete_face(address)
 	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
 	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
@@ -88,4 +88,3 @@ def delete_face(node):
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock destroyface " + face_to_delete + " | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
-
