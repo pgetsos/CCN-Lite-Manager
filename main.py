@@ -28,9 +28,27 @@ def create_content(node):
 	return
 
 
-# Create content for ccn-lite
+# Create automatically content for ccn-lite
+def create_content_auto(num):
+	path = "text/text"+num
+	name = "text"+num
+	content = "This is the content from text: "+num
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 /node" + 1 + "/" + path + " > /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv << "+content
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
+# Search content for ccn-lite
 def search_content(local):
 	path = input("Lookup path: ")
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 "
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
+# Search automatically content for ccn-lite
+def search_content_auto(num):
+	path = "/node1/text/text"+num
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 "
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
@@ -142,11 +160,15 @@ def add_face(address):
 	node = address.split("168.1.")[1]
 	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1 &"
+	time.sleep(1)
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 	time.sleep(3)
 	face_id = read_face()
 	print(node)
+	print(face_id)
+	if face_id is None:
+		return
 	# value, err = p.communicate()
 	# face_num = ord(value.split()[0])
 	# print(face_num)
@@ -160,9 +182,19 @@ def add_face(address):
 # Create face of node via a different address
 def add_other_face(node, address):
 	print("Adding neighbor: " + node)
-	bash_command = "FACEID" + node + "=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
 	print("Adding forwarding rule through: " + address)
-	bash_command = bash_command + " | /home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " $FACEID" + node + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	time.sleep(3)
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	time.sleep(3)
+	face_id = read_face()
+	print(node)
+	print(face_id)
+	if face_id is None:
+		return
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	print("Added neighbor: " + node + " through: " + address)
 	return
@@ -182,22 +214,27 @@ def read_face():
 		for line in f:
 			if "FACEID" in line:
 				node = line.split("FACEID>")[1].split("<")[0]
-				for i in range(4): f.readline()
+				for i in range(4):
+					f.readline()
 				line = f.readline()
 				if "PEER" in line:
 					return node
 
 
 
-def run_auto():
-	local_address = get_local_address()
+def run_auto_11():
+	create_content_auto(1)
+	create_content_auto(2)
+	create_content_auto(3)
+	create_content_auto(4)
+	create_content_auto(5)
+	time.sleep(3)
 	openrelay()
-	start_time = time.time()
-	while True:
-		add_face(local_address)
-		print("Getting neighbors....")
-		get_neighbours_route()
-		time.sleep(30.0 - ((time.time() - start_time) % 30.0))
+
+
+def run_auto_12():
+	openrelay()
+	add_face("192.168.1.1")
 
 
 def run_without_args():
@@ -239,7 +276,8 @@ def run_with_args():
 if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		if sys.argv[1] == "auto":
-			run_auto()
+			if sys.argv[1] == "11":
+				run_auto_11()
 		else:
 			run_with_args()
 	else:
