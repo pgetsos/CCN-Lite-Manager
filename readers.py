@@ -2,7 +2,7 @@
 
 import subprocess
 import sh
-from ccn_management import add_other_face
+
 
 # Read the RPi's IP address from the configuration file
 def get_local_address():
@@ -18,6 +18,7 @@ def get_local_address():
 
 # Read neighbors from IP Table using the route command and create faces for them via the specified address
 def get_neighbours_route():
+	from ccn_management import add_other_face
 	result = subprocess.run(['ip', 'route'], stdout=subprocess.PIPE)
 	full = result.stdout.decode('utf-8')
 	for line in full.splitlines():
