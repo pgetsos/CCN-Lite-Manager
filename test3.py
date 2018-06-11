@@ -12,7 +12,7 @@ def run_auto_31():
 	openrelay()
 
 
-def run_auto_32():
+def run_auto_32(node):
 	local_address = get_local_address()
 
 	openrelay()
@@ -23,9 +23,7 @@ def run_auto_32():
 		add_face("192.168.1.1")
 		time.sleep(1)
 
-		search_content_auto(local_address, 11, "3.1-"+str(counter))
-
-		#time.sleep(1)
+		search_content_auto(node, local_address, 11, "3.1-"+str(counter))
 
 		counter = counter + 1
 		if counter == 31:

@@ -19,9 +19,8 @@ def create_content_auto(num):
 
 
 # Search automatically content for ccn-lite
-def search_content_auto(local, num, search_id):
-	#path = "\"/ndn/test/mycontent\""
-	path = "\"/node1/text/text"+str(num)+"\""
+def search_content_auto(node, local, num, search_id):
+	path = "\"/node" + node + "/text/text"+str(num)+"\""
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 > /home/pi/searchlogs/search"+search_id+".log 2>&1 &"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return

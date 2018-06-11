@@ -16,7 +16,7 @@ def run_auto_21():
 	openrelay()
 
 
-def run_auto_22():
+def run_auto_22(node):
 	local_address = get_local_address()
 
 	openrelay()
@@ -32,19 +32,19 @@ def run_auto_22():
 
 		time.sleep(1)
 
-		search_content_auto(local_address, 6, "2.1-"+str(counter))
-		search_content_auto(local_address, 7, "2.2-"+str(counter))
-		search_content_auto(local_address, 8, "2.3-"+str(counter))
-		search_content_auto(local_address, 9, "2.4-"+str(counter))
-		search_content_auto(local_address, 10, "2.5-"+str(counter))
+		search_content_auto(node, local_address, 6, "2.1-"+str(counter))
+		search_content_auto(node, local_address, 7, "2.2-"+str(counter))
+		search_content_auto(node, local_address, 8, "2.3-"+str(counter))
+		search_content_auto(node, local_address, 9, "2.4-"+str(counter))
+		search_content_auto(node, local_address, 10, "2.5-"+str(counter))
 
 		time.sleep(2)
 
-		search_content_auto(local_address,  6, "2.6-"+str(counter))
-		search_content_auto(local_address,  7, "2.7-"+str(counter))
-		search_content_auto(local_address,  8, "2.8-"+str(counter))
-		search_content_auto(local_address,  9, "2.9-"+str(counter))
-		search_content_auto(local_address, 10, "2.10-"+str(counter))
+		search_content_auto(node, local_address,  6, "2.6-"+str(counter))
+		search_content_auto(node, local_address,  7, "2.7-"+str(counter))
+		search_content_auto(node, local_address,  8, "2.8-"+str(counter))
+		search_content_auto(node, local_address,  9, "2.9-"+str(counter))
+		search_content_auto(node, local_address, 10, "2.10-"+str(counter))
 
 		time.sleep(5)
 
@@ -56,15 +56,15 @@ def run_auto_22():
 		get_neighbours_route()
 		time.sleep(1)
 
-		search_content_auto(local_address,  6, "2.11-"+str(counter))
+		search_content_auto(node, local_address,  6, "2.11-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  7, "2.12-"+str(counter))
+		search_content_auto(node, local_address,  7, "2.12-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  8, "2.13-"+str(counter))
+		search_content_auto(node, local_address,  8, "2.13-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address,  9, "2.14-"+str(counter))
+		search_content_auto(node, local_address,  9, "2.14-"+str(counter))
 		time.sleep(1)
-		search_content_auto(local_address, 10, "2.15-"+str(counter))
+		search_content_auto(node, local_address, 10, "2.15-"+str(counter))
 		time.sleep(1)
 		counter = counter + 1
 		if counter == 4:
