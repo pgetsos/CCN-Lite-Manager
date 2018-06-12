@@ -33,7 +33,7 @@ def create_content_auto(num):
 	path = "text/text"+num
 	name = "text"+num
 	content = "This is the content from text: "+num
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 /node" + 1 + "/" + path + " > /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv << "+content
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-mkC -s ndn2013 /node" + str(1) + "/" + path + " > /home/pi/ccn-lite/test/ndntlv/" + name + ".ndntlv << "+content
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return
 
@@ -155,7 +155,7 @@ def add_face2(address):
 
 # Create face based on address
 def add_face(address):
-	#delete_face(address)
+	# delete_face(address)
 	print("Adding face for: "+address)
 	node = address.split("168.1.")[1]
 	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any " + address + " 9998 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
@@ -219,7 +219,6 @@ def read_face():
 				line = f.readline()
 				if "PEER" in line:
 					return node
-
 
 
 def run_auto_11():

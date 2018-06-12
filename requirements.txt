@@ -1,3 +1,4 @@
+msgpack
 zmq
 sh
 ccn-lite (install from repo)

@@ -1,31 +1,43 @@
 #!/usr/bin/python3.5
 
-from test_helpers import create_content_auto, search_content_auto
-from ccn_management import openrelay, close_relay, add_face
+from test_helpers import create_content_auto_with_node, create_content, search_content
+from ccn_management import open_relay, add_face, restart_relay
 from readers import get_local_address, get_neighbours_route
+from ccn_config import REFRESH_TIME
 import time
 import threading
 
 
-def run_auto_51():
-	create_content_auto(1)
-	create_content_auto(2)
-	create_content_auto(3)
-	create_content_auto(4)
-	create_content_auto(5)
-	create_content_auto(6)
-	create_content_auto(7)
-	create_content_auto(8)
-	create_content_auto(9)
-	create_content_auto(10)
-	time.sleep(2)
+def run_auto_51(auto_create):
+	local_address = get_local_address()
+	time.sleep(1)
 
-	openrelay()
+	local_node = local_address.split("168.1.")[1]
+
+	if auto_create == 1:
+		auto_create_content(local_node)
 
 	time.sleep(2)
 
-	download_thread = threading.Thread(target=neighbours_background, args=some_args)
+	open_relay()
+
+	time.sleep(2)
+
+	download_thread = threading.Thread(target=neighbours_background)
 	download_thread.start()
+
+	while True:
+		ccn_choice = input("Choose action: \n1. Search for content\n2. Create content\n 3. Continue")
+		if ccn_choice == '1':
+			search_content(local_address)
+		elif ccn_choice == '2':
+			create_content(local_node)
+			restart_relay()  # Restart relay to see new content
+			neighbour_search()
+		elif ccn_choice == '3':
+			break
+		else:
+			print("\n!!! This choice doesn't exist, please try again !!!\n")
 
 
 def neighbours_background():
@@ -37,77 +49,23 @@ def neighbours_background():
 		print("Getting neighbors....")
 		get_neighbours_route()
 
-		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
+		time.sleep(REFRESH_TIME - ((time.time() - start_time) % REFRESH_TIME))
 
 
-def run_auto_52():
+def neighbour_search():
 	local_address = get_local_address()
-
-	openrelay()
-	time.sleep(2)
-
-	start_time = time.time()
-
-	while True:
-		add_face(local_address)
-		print("Getting neighbors....")
-		get_neighbours_route()
-
-		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
+	add_face(local_address)
+	get_neighbours_route()
 
 
-def run_auto_43(node):
-	local_address = get_local_address()
-
-	openrelay()
-	time.sleep(2)
-
-	start_time = time.time()
-
-	counter = 1
-	while True:
-		add_face(local_address)
-		print("Getting neighbors....")
-		get_neighbours_route()
-
-		time.sleep(1)
-
-		search_content_auto(node, local_address, 6, "4.1-"+str(counter))
-		search_content_auto(node, local_address, 7, "4.2-"+str(counter))
-		search_content_auto(node, local_address, 8, "4.3-"+str(counter))
-		search_content_auto(node, local_address, 9, "4.4-"+str(counter))
-		search_content_auto(node, local_address, 10, "4.5-"+str(counter))
-
-		time.sleep(2)
-
-		search_content_auto(node, local_address,  6, "4.6-"+str(counter))
-		search_content_auto(node, local_address,  7, "4.7-"+str(counter))
-		search_content_auto(node, local_address,  8, "4.8-"+str(counter))
-		search_content_auto(node, local_address,  9, "4.9-"+str(counter))
-		search_content_auto(node, local_address, 10, "4.10-"+str(counter))
-
-		time.sleep(5)
-
-		close_relay()
-		time.sleep(2)
-
-		openrelay()
-		time.sleep(1)
-		get_neighbours_route()
-		time.sleep(1)
-
-		search_content_auto(node, local_address,  6, "4.11-"+str(counter))
-		time.sleep(1)
-		search_content_auto(node, local_address,  7, "4.12-"+str(counter))
-		time.sleep(1)
-		search_content_auto(node, local_address,  8, "4.13-"+str(counter))
-		time.sleep(1)
-		search_content_auto(node, local_address,  9, "4.14-"+str(counter))
-		time.sleep(1)
-		search_content_auto(node, local_address, 10, "4.15-"+str(counter))
-		time.sleep(1)
-		counter = counter + 1
-		if counter == 4:
-			break
-		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
-	print("FINISHED!")
+def auto_create_content(local_node):
+	create_content_auto_with_node(1, local_node)
+	create_content_auto_with_node(2, local_node)
+	create_content_auto_with_node(3, local_node)
+	create_content_auto_with_node(4, local_node)
+	create_content_auto_with_node(5, local_node)
+	create_content_auto_with_node(6, local_node)
+	create_content_auto_with_node(7, local_node)
+	create_content_auto_with_node(8, local_node)
+	create_content_auto_with_node(9, local_node)
+	create_content_auto_with_node(10, local_node)
