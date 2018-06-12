@@ -81,6 +81,7 @@ def run_auto_43(node):
 		search_content_auto(node, local_address,  9, "4.14-"+str(counter))
 		time.sleep(1)
 		search_content_auto(node, local_address, 10, "4.15-"+str(counter))
+
 		time.sleep(1)
 		counter = counter + 1
 		if counter == 4:
