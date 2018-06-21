@@ -1,8 +1,9 @@
 #!/usr/bin/python3.5
 
 from test_helpers import create_content_auto, search_content_auto
-from ccn_management import openrelay, close_relay, add_face
+from ccn_management import open_relay, close_relay, add_face
 from readers import get_local_address, get_neighbours_route
+from ccn_config import REFRESH_TIME
 import time
 
 
@@ -13,13 +14,13 @@ def run_auto_41():
 	create_content_auto(9)
 	create_content_auto(10)
 	time.sleep(2)
-	openrelay()
+	open_relay()
 
 
 def run_auto_42():
 	local_address = get_local_address()
 
-	openrelay()
+	open_relay()
 	time.sleep(2)
 
 	start_time = time.time()
@@ -29,14 +30,13 @@ def run_auto_42():
 		print("Getting neighbors....")
 		get_neighbours_route()
 
-
 		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
 
 
 def run_auto_43():
 	local_address = get_local_address()
 
-	openrelay()
+	open_relay()
 	time.sleep(2)
 
 	start_time = time.time()
@@ -68,7 +68,7 @@ def run_auto_43():
 		close_relay()
 		time.sleep(2)
 
-		openrelay()
+		open_relay()
 		time.sleep(1)
 		get_neighbours_route()
 		time.sleep(1)
@@ -86,5 +86,5 @@ def run_auto_43():
 		counter = counter + 1
 		if counter == 4:
 			break
-		time.sleep(20.0 - ((time.time() - start_time) % 20.0))
+		time.sleep(REFRESH_TIME - ((time.time() - start_time) % REFRESH_TIME))
 	print("FINISHED!")

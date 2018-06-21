@@ -1,7 +1,7 @@
 #!/usr/bin/python3.5
 
 from test_helpers import create_content_auto, search_content_auto
-from ccn_management import openrelay, close_relay, add_face
+from ccn_management import open_relay, close_relay, add_face
 from readers import get_local_address
 import time
 
@@ -13,13 +13,13 @@ def run_auto_11():
 	create_content_auto(4)
 	create_content_auto(5)
 	time.sleep(3)
-	openrelay()
+	open_relay()
 
 
 def run_auto_12():
 	local_address = get_local_address()
 
-	openrelay()
+	open_relay()
 	time.sleep(3)
 	add_face("192.168.1.1")
 	search_content_auto(local_address, 1, "1.1")
@@ -41,7 +41,7 @@ def run_auto_12():
 	close_relay()
 	time.sleep(5)
 
-	openrelay()
+	open_relay()
 	time.sleep(5)
 	add_face("192.168.1.1")
 	time.sleep(5)

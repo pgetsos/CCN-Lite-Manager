@@ -1,7 +1,6 @@
-Test 1
+Test 5
 
-11: Server/Producer
-12: Consumer
+test.py test 51 <0|1>
 
-
-Test 2
+0: no content created automatically
+1: creates 10 text files under /nodeX/text/textY path, where X = current node, Y is numbers 1-10
