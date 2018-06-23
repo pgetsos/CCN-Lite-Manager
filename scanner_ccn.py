@@ -2,10 +2,14 @@
 from logging import getLogger
 from os import path, makedirs
 
+import threading
+import subprocess
+import time
+
 from parse import *
 
 from config import *
-from ext.sh import killall, sudo, SignalException_SIGKILL, ErrorReturnCode_1, echo, rm
+from ext.sh import tail, killall, sudo, SignalException_SIGKILL, ErrorReturnCode_1, echo, rm
 
 __license__ = """
 	This file is part of Dedalus.
@@ -33,8 +37,7 @@ _DLOG = getLogger('dedalus_logger')
 mn_sudo = sudo.bake("-S", _in=S_SUDO)
 
 # CCN constants
-IBR_RECEIVER = 'receiver'  # names
-IBR_SENDER = 'sender'
+REFRESH_TIME = 30
 
 
 # TODO: add get paths and get neighbors functionality
@@ -55,46 +58,23 @@ class CCNNode(object):
 
 
 class Scanner(object):
-	def __init__(self, ip='::1', port=4550, buffer_size=1024):
+	def __init__(self):
 		"""Init CCNScanner instance.
 		"""
-		self.ip = ip
-		self.port = port
-		self.buffer_size = buffer_size
-		self.socket = None
-		self.fsock = None
-		self.protocol = 'epidemic'  # TODO: get this dynamically
-
 		self.node = CCNNode()
-		self.formats = {
+		self.formats = { # TODO Do I need this?
 			'IBR-DTN': "IBR-DTN {proto_version} (build {build_num}) API {api_version}",
 			'stats_info': "Uptime: {uptime}\nNeighbors: {neigh_num}\nStorage-size: {ssize}",
 			'stats_bundles': "Stored: {storage}\nExpired: {expired}\nTransmitted: {transmitted}"
 							 "\nAborted: {aborted}\nRequeued: {requeued}\nQueued: {queued}",
 			'stats_conv': "TCP|in: {tcpin}\nTCP|out: {tcpout}"  #
 		}
-		self.status_codes = {
-			'API_STATUS_CONTINUE': 100,
-			'API_STATUS_OK': 200,
-			'API_STATUS_CREATED': 201,
-			'API_STATUS_ACCEPTED': 202,
-			'API_STATUS_FOUND': 302,
-			'API_STATUS_BAD_REQUEST': 400,
-			'API_STATUS_UNAUTHORIZED': 401,
-			'API_STATUS_FORBIDDEN': 403,
-			'API_STATUS_NOT_FOUND': 404,
-			'API_STATUS_NOT_ALLOWED': 405,
-			'API_STATUS_NOT_ACCEPTABLE': 406,
-			'API_STATUS_CONFLICT': 409,
-			'API_STATUS_INTERNAL_ERROR': 500,
-			'API_STATUS_NOT_IMPLEMENTED': 501,
-			'API_STATUS_SERVICE_UNAVAILABLE': 503,
-			'API_STATUS_VERSION_NOT_SUPPORTED': 505
-		}
+
 		self.process = None
+		self.faces_ids = {}
 
 		self.logs_path = path.abspath(path.join(path.dirname(__file__), '..', 'Log/CCN/'))
-		self.config_path = path.abspath(path.join(path.dirname(__file__), 'ibr.conf'))
+		#self.config_path = path.abspath(path.join(path.dirname(__file__), 'ibr.conf'))
 		if not path.exists(self.logs_path):
 			makedirs(self.logs_path)
 		self.stop()
@@ -108,7 +88,6 @@ class Scanner(object):
 			return 'a ccn instance was already running in this system'
 	@staticmethod
 	def stop():
-
 		try:
 			with mn_sudo:
 				killall('ccn')
@@ -132,8 +111,8 @@ class Scanner(object):
 
 
 	def get_routing_info(self):
-		self._dump()
-		return self.node.routing_info()
+		self._dump() # TODO add data to return
+		return
 
 	@staticmethod
 	def get_current_interface():
@@ -161,6 +140,98 @@ class Scanner(object):
 		data_creation_file = open(self.logs_path + '/datacreation.txt', "a")
 		echo(content, _out=data_creation_file)
 		sudo("/home/pi/ccn-lite/build/bin/ccn-lite-mkC", "-s", "ndn2013", "-i", data_creation_file, "-o", "/home/pi/ccn-lite/test/ndntlv/" + filename + ".ndntlv", path, _bg=True)
+		return
+
+	# Read the RPi's IP address from the configuration file
+	def get_local_address(self):
+		local = "192.168.1.1"
+		for line in tail("-n", "20", "-f", "/etc/network/interfaces", _iter=True):
+			if "address 192.168.1." in line:
+				local = line.split("address ")[1].splitlines()[0]
+				break
+
+		print("\nGot local address: " + local)
+		return local
+
+
+	# Read neighbors from IP Table using the route command and create faces for them via the specified address
+	def get_neighbours_route(self):
+		result = subprocess.run(['ip', 'route'], stdout=subprocess.PIPE)
+		full = result.stdout.decode('utf-8')
+		for line in full.splitlines():
+			if "via" in line and line.startswith("192.168.1."):
+				print(line)
+				address = line.split(" ")[2].splitlines()[0]
+				target = line.split(" ")[0].splitlines()[0]
+				node = target.split("168.1.")[1]
+				self.add_other_face(node, address)
+
+	def neighbours_background(self):
+		start_time = time.time()
+		local_address = self.get_local_address()
+
+		while True:
+			self.add_face(local_address)
+			print("Getting neighbors....")
+			self.get_neighbours_route()
+
+			time.sleep(REFRESH_TIME - ((time.time() - start_time) % REFRESH_TIME))
+
+	# Reads the FACEID from the dump xml of CCN-Lite
+	def read_face(self):
+		face_dump_file = self.logs_path + '/facedump.log'
+		with open(face_dump_file, encoding='utf-8', errors='ignore') as f:
+			for line in f:
+				if "FACEID" in line:
+					node = line.split("FACEID>")[1].split("<")[0]
+					for i in range(4):
+						f.readline()
+					line = f.readline()
+					if "PEER" in line:
+						return node
+
+	# Create face based on address
+	def add_face(self, address):
+		node = address.split("168.1.")[1]
+		sudo(sudo(sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "newUDPface", "any", address, "9998"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"), "grep", "FACEID"), "sed", "-e", "'s/^[^0-9]*\([0-9]\+\).*/\1/')")
+		time.sleep(1)
+		face_dump_file = open(self.logs_path + '/facedump.txt', "a")
+		sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "debug", "dump"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml", _out=face_dump_file)
+		time.sleep(1)
+		face_id = self.read_face()
+		if face_id is None:
+			return
+		self.delete_face(node)
+		time.sleep(1)
+		self.faces_ids[node] = face_id
+		sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "prefixreg", "/node" + node, face_id, "ndn2013"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml")
+		return
+
+
+	# Create face of node via a different address
+	def add_other_face(self, node, address):
+		sudo(sudo(sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "newUDPface", "any", address, "9998"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"), "grep", "FACEID"), "sed", "-e", "'s/^[^0-9]*\([0-9]\+\).*/\1/')")
+		time.sleep(1)
+		face_dump_file = open(self.logs_path + '/facedump.txt', "a")
+		sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "debug", "dump"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml", _out=face_dump_file)
+		time.sleep(1)
+		face_id = self.read_face()
+		if face_id is None:
+			return
+		self.delete_face(node)
+		time.sleep(1)
+		self.faces_ids[node] = face_id
+		sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "prefixreg", "/node" + node, face_id, "ndn2013"), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml")
+		return
+
+
+	# Delete a face of a node -NOT address
+	def delete_face(self, node):
+		if node in self.faces_ids:
+			face_to_delete = self.faces_ids[node]
+		else:
+			return
+		sudo(sudo("/home/pi/ccn-lite/build/bin/ccn-lite-ctrl", "-x", "/tmp/mgmt-relay.sock", "destroyface", face_to_delete), "/home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml")
 		return
 
 if __name__ == "__main__":
