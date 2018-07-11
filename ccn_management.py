@@ -9,7 +9,7 @@ faces_ids = {}
 
 # Open a relay for ccn-lite in the background
 def open_relay():
-	delete_sockets()
+	close_relay()
 	print("Opening relay...")
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay.sock -d /home/pi/ccn-lite/test/ndntlv > /home/pi/ccn.log 2>&1 &"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)

@@ -37,7 +37,7 @@ def create_content_auto_with_node(num, node):
 
 # Search automatically content for ccn-lite
 def search_content_auto(local, num, search_id):
-	path = "\"/node" + SERVER_NODE + "/text/text"+str(num)+"\""
+	path = "\"/node" + str(SERVER_NODE) + "/text/text"+str(num)+"\""
 	pathlib.Path('/home/pi/searchlogs').mkdir(parents=True, exist_ok=True)
 	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 > /home/pi/searchlogs/search"+search_id+".log 2>&1 &"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
@@ -62,10 +62,10 @@ def create_content(node):
 # Search content for ccn-lite
 def search_content(local):
 	path = input("Lookup path: ")
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 "
-	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	#bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 "
+	#subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	# Performing a second, identical look-up to save the result in a log file
 	pathlib.Path('/home/pi/searchlogs').mkdir(parents=True, exist_ok=True)
-	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 > /home/pi/searchlogs/searchCustom.log 2>&1 &"
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u " + local + "/9998 " + path + " | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 >> /home/pi/searchlogs/searchCustom.log 2>&1 &"
 	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
 	return

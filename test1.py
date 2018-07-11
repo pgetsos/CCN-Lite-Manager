@@ -3,6 +3,7 @@
 from test_helpers import create_content_auto, search_content_auto
 from ccn_management import open_relay, close_relay, add_face
 from readers import get_local_address
+from ccn_config import SERVER_NODE
 import time
 
 
@@ -21,7 +22,7 @@ def run_auto_12():
 
 	open_relay()
 	time.sleep(3)
-	add_face("192.168.1.1")
+	add_face("192.168.1."+str(SERVER_NODE))
 	search_content_auto(local_address, 1, "1.1")
 	search_content_auto(local_address, 2, "1.2")
 	search_content_auto(local_address, 3, "1.3")
@@ -43,7 +44,7 @@ def run_auto_12():
 
 	open_relay()
 	time.sleep(5)
-	add_face("192.168.1.1")
+	add_face("192.168.1."+str(SERVER_NODE))
 	time.sleep(5)
 	search_content_auto(local_address, 1, "1.11")
 	time.sleep(3)

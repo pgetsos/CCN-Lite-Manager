@@ -14,7 +14,7 @@ def run_auto_51(auto_create):
 
 	local_node = local_address.split("168.1.")[1]
 
-	if auto_create == 1:
+	if auto_create == "1":
 		auto_create_content(local_node)  # Creates 10 test files with path /nodeX/text/textY, where X = local node, Y is all numbers 1-10
 
 	time.sleep(2)
