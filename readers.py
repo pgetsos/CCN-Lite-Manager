@@ -12,7 +12,7 @@ def get_local_address():
 			local = line.split("address ")[1].splitlines()[0]
 			break
 
-	print("\nGot local address: " + local)
+	#print("\nGot local address: " + local)
 	return local
 
 
@@ -23,7 +23,7 @@ def get_neighbours_route():
 	full = result.stdout.decode('utf-8')
 	for line in full.splitlines():
 		if "via" in line and line.startswith("192.168.1."):
-			print(line)
+			#print(line)
 			address = line.split(" ")[2].splitlines()[0]
 			target = line.split(" ")[0].splitlines()[0]
 			node = target.split("168.1.")[1]
