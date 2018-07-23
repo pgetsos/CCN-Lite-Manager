@@ -64,6 +64,27 @@ def add_face(address):
 	return
 
 
+# Create face for dtn
+def add_dtn_face(address):
+	#print("Adding face for: "+address)
+	node = address.split("168.1.")[1]
+	bash_command = "FACEID=$(/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock newUDPface any 127.0.0.1 6666 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/')"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	time.sleep(1)
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock debug dump | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml > /home/pi/face_dump.log 2>&1"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	time.sleep(1)
+	face_id = read_face()
+	if face_id is None:
+		return
+	delete_face(node)
+	time.sleep(1)
+	faces_ids[node] = face_id
+	bash_command = "/home/pi/ccn-lite/build/bin/ccn-lite-ctrl -x /tmp/mgmt-relay.sock prefixreg /node" + node + " " + face_id + " ndn2013 | /home/pi/ccn-lite/build/bin/ccn-lite-ccnb2xml"
+	subprocess.Popen(bash_command, stdout=subprocess.PIPE, shell=True)
+	return
+
+
 # Create face of node via a different address
 def add_other_face(node, address):
 	#print("Adding neighbor: " + node)

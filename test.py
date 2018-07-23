@@ -6,6 +6,7 @@ from test2 import run_auto_21, run_auto_22
 from test3 import run_auto_31, run_auto_32
 from test4 import run_auto_41, run_auto_42, run_auto_43
 from test5 import run_auto_51
+from test6 import run_auto_61
 
 
 if __name__ == "__main__":
@@ -31,3 +32,5 @@ if __name__ == "__main__":
 				run_auto_43()
 			elif sys.argv[2] == "51":
 				run_auto_51(sys.argv[3])
+			elif sys.argv[2] == "61":
+				run_auto_61(sys.argv[3])
