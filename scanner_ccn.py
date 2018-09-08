@@ -140,7 +140,7 @@ class Scanner(object):
 	def search_content(self, local, path):
 		print("Emitting Interst for " + path)
 		os.system(
-			'/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u ' + local + '/9998 \"' + path + '" | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 >> ' + self.logs_path + '/ccn-search.log 2>&1 &')
+			'/home/pi/ccn-lite/build/bin/ccn-lite-peek -s ndn2013 -u ' + local + '/9998 \"' + path + '" | /home/pi/ccn-lite/build/bin/ccn-lite-pktdump -f 2 | while IFS= read -r line; do echo "$(date) $line"; done >> ' + self.logs_path + '/ccn-search.log 2>&1 &')
 		return "Search done check the log"
 
 	def search(self, node="node1"):
